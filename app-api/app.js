@@ -5,6 +5,7 @@ const path = require('path');
 const auth = require('./routes/auth');
 const rooms = require('./routes/room');
 const chat = require('./chat_namespace');
+const config = require('./config/index');
 const http = require('http');
 const server = http.createServer(app);
 const io = (app.io = require('socket.io')(server, {
@@ -33,5 +34,6 @@ app.use('/rooms', rooms);
 app.use(express.static(path.join(__dirname, '../dist')));
 chat.createNameSpace(io);
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+server.listen(config.PORT, () =>
+	console.log(`Server is running on port ${config.PORT}`)
+);

@@ -1,3 +1,5 @@
+const config = require('../config/index');
+
 let namespace;
 
 const users = {
@@ -16,5 +18,5 @@ const onConnection = socket => {
 };
 
 exports.createNameSpace = io => {
-	namespace = io.of('/').on('connection', onConnection);
+	namespace = io.of(config.CHAT_NAMESPACE).on('connection', onConnection);
 };
