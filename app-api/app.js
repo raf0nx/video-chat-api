@@ -12,14 +12,13 @@ const io = (app.io = require('socket.io')(server, {
 	cors: {
 		origin: 'http://localhost:8080',
 		methods: ['GET', 'POST'],
+		credentials: true,
+		transports: ['websocket', 'polling'],
 	},
+	allowEIO3: true,
 }));
 
-var corsOptions = {
-	origin: 'http://localhost:8080',
-};
-
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
