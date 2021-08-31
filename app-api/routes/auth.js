@@ -17,4 +17,11 @@ router.post('/login', (req, res) => {
 	});
 });
 
+router.post('/logout', (req, res) => {
+	const username = req.body.username;
+	console.log(`User ${username} logged out successfully.`);
+
+	return res.sendStatus(200);
+});
+
 module.exports = router;
