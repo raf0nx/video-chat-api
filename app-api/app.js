@@ -7,6 +7,8 @@ const rooms = require('./routes/room');
 const chat = require('./chat_namespace');
 const config = require('./config/index');
 const http = require('http');
+const { createAdapter } = require('@socket.io/redis-adapter');
+const { createClient } = require('redis');
 const server = http.createServer(app);
 const io = (app.io = require('socket.io')(server, {
 	cors: {
@@ -32,6 +34,14 @@ app.use('/rooms', rooms);
 
 app.use(express.static(path.join(__dirname, '../dist')));
 chat.createNameSpace(io);
+
+const pubClient = createClient({
+	host: config.REDIS_HOST,
+	port: config.REDIS_PORT,
+});
+const subClient = pubClient.duplicate();
+
+io.adapter(createAdapter(pubClient, subClient));
 
 server.listen(config.PORT, () =>
 	console.log(`Server is running on port ${config.PORT}`)
