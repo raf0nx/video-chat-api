@@ -1,46 +1,68 @@
-const users = {
-	GENERAL: [],
-	OFFICE: [],
-	EXPERIMENTAL: [],
-};
+const Redis = require('../redis/index');
+
 let userRoom, userName;
 
 const joinRoom =
-	(sockeT, namespace) =>
-	({ socket }) => {
-		sockeT.join(socket.room);
+	(_socket, namespace) =>
+	async ({ socket }) => {
+		_socket.join(socket.room);
 		userRoom = socket.room;
 		userName = socket.username;
 
-		users[socket.room].push({
-			username: socket.username,
-			privateChat: false,
-		});
+		try {
+			await Redis.addUser(userRoom, userName, {
+				username: userName,
+				status: socket.status,
+				privateChat: false,
+			});
 
-		namespace.in(socket.room).emit('newUser', users[socket.room]);
+			const users = await Redis.getUsers(userRoom);
+			namespace
+				.in(socket.room)
+				.emit('newUser', { users, username: socket.username });
+		} catch (error) {
+			console.error(error);
+		}
 	};
 
 const publicMessage =
 	namespace =>
-	({ room, message, username }) => {
+	({ socket, message }) => {
+		const { room, username } = socket;
 		namespace.in(room).emit('newMessage', { message, username });
 	};
 
 const leaveRoom =
-	(socket, namespace) =>
-	({ room, username }) => {
-		socket.leave(room);
-		namespace.in(room).emit('newUser', { users, username });
+	(_socket, namespace) =>
+	async ({ socket }) => {
+		const { room, username } = socket;
+		_socket.leave(room);
+		try {
+			await Redis.deleteUser(room, username);
+			const users = await Redis.getUsers(room);
+
+			namespace.in(room).emit('newUser', { users, username });
+		} catch (error) {
+			console.error(error);
+		}
 	};
 
 const leaveChat =
 	(socket, namespace) =>
-	({ room, username }) => {
-		socket.leave(room);
-		namespace.in(room).emit('leaveChat', {
-			users,
-			message: `${username} left the room`,
-		});
+	async ({ room, username }) => {
+		try {
+			await Redis.deleteUser(room, username);
+			const users = await Redis.getUsers(room);
+
+			socket.leave(room);
+
+			namespace.in(room).emit('leaveChat', {
+				users,
+				message: `${username} left the room`,
+			});
+		} catch (error) {
+			console.error(error);
+		}
 	};
 
 const joinPrivateRoom =
@@ -91,8 +113,22 @@ const privateMessage =
 
 const changeStatus =
 	namespace =>
-	({ username, status, room }) => {
-		namespace.in(room).emit('newUser', { users, username });
+	async ({ socket }) => {
+		try {
+			const { username, room, status } = socket;
+
+			const user = await Redis.getUser(room, username);
+			await Redis.setUser(room, username, {
+				...user,
+				status,
+			});
+
+			const users = await Redis.getUsers(room);
+
+			namespace.in(room).emit('newUser', { users, username });
+		} catch (error) {
+			console.error(error);
+		}
 	};
 
 const disconnect = (socket, namespace) => () => {
