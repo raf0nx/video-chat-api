@@ -66,41 +66,57 @@ const leaveChat =
 	};
 
 const joinPrivateRoom =
-	(socket, namespace) =>
-	({ username, room, to, from, joinConfirm }) => {
-		socket.join(to);
+	(_socket, namespace) =>
+	async ({ socket, to, from, joinConfirm }) => {
+		const { username, room } = socket;
+
+		_socket.join(to);
+
 		if (!room) return;
 
-		const privateChat = null;
+		try {
+			const { privateChat } = await Redis.getUser(room, username);
 
-		if (!!privateChat && privateChat !== username) {
-			namespace.to(to).emit('leavePrivateRoom', {
-				to,
-				room,
-				privateMessage: `${to} is already talking`,
-				from: username,
-			});
+			if (!!privateChat && privateChat !== username) {
+				namespace.to(room).emit('leavePrivateRoom', {
+					to,
+					room,
+					privateMessage: `${to} is already talking`,
+					from: username,
+				});
 
-			socket.leave(to);
-			return;
-		}
+				socket.leave(to);
+			}
 
-		if (!joinConfirm) {
-			namespace
-				.in(room)
-				.emit('privateChat', { username, to, room, from });
+			const user = await Redis.getUser(room, username);
+			await Redis.setUser(room, username, { ...user, privateChat: to });
+
+			if (!joinConfirm) {
+				namespace
+					.in(room)
+					.emit('privateChat', { username, to, room, from });
+			}
+		} catch (error) {
+			console.error(error);
 		}
 	};
 
 const leavePrivateRoom =
 	(socket, namespace) =>
-	({ room, from, to }) => {
-		socket.leave(to);
-		namespace.to(to).emit('leavePrivateRoom', {
-			to,
-			from,
-			privateMessage: `${from} has closed the chat`,
-		});
+	async ({ room, from, to }) => {
+		try {
+			const user = await Redis.getUser(room, from);
+			await Redis.setUser(room, from, { ...user, privateChat: false });
+
+			socket.leave(to);
+			namespace.to(to).emit('leavePrivateRoom', {
+				to,
+				from,
+				privateMessage: `${from} has closed the chat`,
+			});
+		} catch (error) {
+			console.error(error);
+		}
 	};
 
 const privateMessage =
@@ -131,8 +147,13 @@ const changeStatus =
 		}
 	};
 
-const disconnect = (socket, namespace) => () => {
-	leaveChat(socket, namespace)({ room: userRoom, name: userName });
+const disconnect = (socket, namespace) => async () => {
+	try {
+		await Redis.deleteUser(userName, config.KEY);
+		leaveChat(socket, namespace)({ room: userRoom, username: userName });
+	} catch (error) {
+		console.error(error);
+	}
 };
 
 module.exports = {
