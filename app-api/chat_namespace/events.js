@@ -67,37 +67,36 @@ const leaveChat =
 
 const joinPrivateRoom =
 	(_socket, namespace) =>
-	async ({ socket, to, from, joinConfirmation }) => {
+	async ({ socket, to, from, privateRoom, joinConfirmation }) => {
 		const { username, room } = socket;
 
 		if (!room) return;
 
-		_socket.join(to);
+		_socket.join(privateRoom);
 
 		try {
 			const { privateChat } = await Redis.getUser(room, to);
 			if (!!privateChat && privateChat !== username) {
-				namespace.to(to).emit('leavePrivateRoom', {
+				namespace.to(privateRoom).emit('leavePrivateRoom', {
 					to,
-					room,
 					privateMessage: `${to} is already talking`,
 					from: username,
 				});
 
-				_socket.leave(to);
+				_socket.leave(privateRoom);
 				return;
 			}
 
 			const user = await Redis.getUser(room, username);
 			await Redis.setUser(room, username, {
 				...user,
-				privateChat: to,
+				privateChat: privateRoom,
 			});
 
 			if (!joinConfirmation) {
 				namespace
 					.in(room)
-					.emit('privateChat', { username, to, room, from });
+					.emit('privateChat', { to, from });
 			}
 		} catch (error) {
 			console.log(error);
@@ -106,13 +105,13 @@ const joinPrivateRoom =
 
 const leavePrivateRoom =
 	(socket, namespace) =>
-	async ({ room, from, to }) => {
+	async ({ room, from, to, privateRoom }) => {
 		try {
 			const user = await Redis.getUser(room, from);
 			await Redis.setUser(room, from, { ...user, privateChat: false });
 
-			socket.leave(to);
-			namespace.to(to).emit('leavePrivateRoom', {
+			socket.leave(privateRoom);
+			namespace.to(privateRoom).emit('leavePrivateRoom', {
 				to,
 				from,
 				privateMessage: `${from} has closed the chat`,
@@ -124,10 +123,10 @@ const leavePrivateRoom =
 
 const privateMessage =
 	namespace =>
-	({ privateMessage, to, from, room }) => {
+	({ privateMessage, to, from, privateRoom }) => {
 		namespace
-			.to(room)
-			.emit('privateMessage', { to, privateMessage, from, room });
+			.to(privateRoom)
+			.emit('privateMessage', { to, privateMessage, from });
 	};
 
 const changeStatus =
