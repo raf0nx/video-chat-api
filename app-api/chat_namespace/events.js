@@ -67,37 +67,40 @@ const leaveChat =
 
 const joinPrivateRoom =
 	(_socket, namespace) =>
-	async ({ socket, to, from, joinConfirm }) => {
+	async ({ socket, to, from, joinConfirmation }) => {
 		const { username, room } = socket;
-
-		_socket.join(to);
 
 		if (!room) return;
 
-		try {
-			const { privateChat } = await Redis.getUser(room, username);
+		_socket.join(to);
 
+		try {
+			const { privateChat } = await Redis.getUser(room, to);
 			if (!!privateChat && privateChat !== username) {
-				namespace.to(room).emit('leavePrivateRoom', {
+				namespace.to(to).emit('leavePrivateRoom', {
 					to,
 					room,
 					privateMessage: `${to} is already talking`,
 					from: username,
 				});
 
-				socket.leave(to);
+				_socket.leave(to);
+				return;
 			}
 
 			const user = await Redis.getUser(room, username);
-			await Redis.setUser(room, username, { ...user, privateChat: to });
+			await Redis.setUser(room, username, {
+				...user,
+				privateChat: to,
+			});
 
-			if (!joinConfirm) {
+			if (!joinConfirmation) {
 				namespace
 					.in(room)
 					.emit('privateChat', { username, to, room, from });
 			}
 		} catch (error) {
-			console.error(error);
+			console.log(error);
 		}
 	};
 
