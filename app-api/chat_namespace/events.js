@@ -94,9 +94,7 @@ const joinPrivateRoom =
 			});
 
 			if (!joinConfirmation) {
-				namespace
-					.in(room)
-					.emit('privateChat', { to, from });
+				namespace.in(room).emit('privateChat', { to, from });
 			}
 		} catch (error) {
 			console.log(error);
@@ -158,6 +156,14 @@ const disconnect = (socket, namespace) => async () => {
 	}
 };
 
+const privateMessagePCSignaling =
+	namespace =>
+	({ desc, to, privateRoom, from }) => {
+		namespace
+			.to(privateRoom)
+			.emit('privateMessagePCSignaling', { desc, to, from });
+	};
+
 module.exports = {
 	joinRoom,
 	publicMessage,
@@ -168,4 +174,5 @@ module.exports = {
 	privateMessage,
 	changeStatus,
 	disconnect,
+	privateMessagePCSignaling,
 };
