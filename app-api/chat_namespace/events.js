@@ -1,4 +1,5 @@
 const Redis = require('../redis/index');
+const config = require('../config/index');
 
 let userRoom, userName;
 

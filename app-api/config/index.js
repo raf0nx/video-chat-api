@@ -3,6 +3,7 @@ const CONFIG = {
 	CHAT_NAMESPACE: '/chat',
 	REDIS_HOST: process.env.REDIS_HOST || 'localhost',
 	REDIS_PORT: process.env.REDIS_PORT || 6379,
+	KEY: 'unique',
 };
 
 module.exports = CONFIG;
