@@ -6,6 +6,7 @@ const auth = require('./routes/auth');
 const rooms = require('./routes/room');
 const chat = require('./chat_namespace');
 const config = require('./config/index');
+const user =  require('./model/user');
 const http = require('http');
 const { createAdapter } = require('@socket.io/redis-adapter');
 const { createClient } = require('redis');
