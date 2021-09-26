@@ -98,7 +98,7 @@ const joinPrivateRoom =
 				namespace.in(room).emit('privateChat', { to, from });
 			}
 		} catch (error) {
-			console.log(error);
+			console.error(error);
 		}
 	};
 
