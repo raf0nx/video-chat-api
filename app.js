@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const path = require('path');
+const passport = require('passport');
+const cookieSession = require('cookie-session');
 const auth = require('./routes/auth');
 const rooms = require('./routes/room');
 const chat = require('./chat_namespace');
@@ -19,15 +21,21 @@ const io = (app.io = require('socket.io')(server, {
 	},
 	allowEIO3: true,
 }));
+require('./config/passport.config');
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use((_, __, next) => {
-	console.log('Time: ', Date.now());
-	next();
-});
+app.use(
+	cookieSession({
+		name: 'vochat-session',
+		keys: ['key1', 'key2'],
+	})
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use('/auth', auth);
 app.use('/rooms', rooms);

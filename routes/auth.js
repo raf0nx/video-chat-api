@@ -1,27 +1,37 @@
 const express = require('express');
+const authController = require('../controllers/authController');
 const router = express.Router();
+const passport = require('passport');
 
-router.post('/login', (req, res) => {
-	const user = req.body;
-
-	if (!user.room || !user.username) {
-		return res.status(422).send({
-			message:
-				'Unprocessable entity! At least one required param is not provided!',
-		});
-	}
-
-	return res.status(200).send({
-		room: user.room,
-		username: user.username,
-	});
+router.post('/register', authController.createUser);
+router.post('/login', authController.login);
+// router.post('/logout', authController.logout);
+router.get('/users', authController.getUsers);
+router.get('/users/:id', authController.getUserById);
+router.patch('/users/:id', authController.editUser);
+router.delete('/users/:id', authController.deleteUser);
+router.get('/failed', (req, res) => res.send('You failed to log in'));
+router.get('/passed', (req, res) => {
+	const parsedUser = JSON.parse(JSON.stringify(req.user));
+	res.send(`Welcome mr ${parsedUser.name}`);
 });
+router.get(
+	'/google',
+	passport.authenticate('google', { scope: ['profile', 'email'] })
+);
 
-router.post('/logout', (req, res) => {
-	const username = req.body.username;
-	console.log(`User ${username} logged out successfully.`);
+router.get(
+	'/google/callback',
+	passport.authenticate('google', { failureRedirect: '/auth/failed' }),
+	function (req, res) {
+		res.redirect('/auth/passed');
+	}
+);
 
-	return res.sendStatus(200);
+router.get('/logout', (req, res) => {
+	req.session = null;
+	req.logout();
+	res.redirect('/');
 });
 
 module.exports = router;

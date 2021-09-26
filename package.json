@@ -12,10 +12,13 @@
 	"dependencies": {
 		"@socket.io/redis-adapter": "^7.0.0",
 		"bluebird": "^3.7.2",
+		"cookie-session": "^1.4.0",
 		"cors": "^2.8.5",
 		"express": "^4.17.1",
 		"http": "^0.0.1-security",
 		"mysql2": "^2.3.0",
+		"passport": "^0.5.0",
+		"passport-google-oauth20": "^2.0.0",
 		"path": "^0.12.7",
 		"redis": "^3.1.2",
 		"sequelize": "^6.6.5",
