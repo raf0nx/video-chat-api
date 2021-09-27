@@ -30,8 +30,8 @@ exports.login = (req, res) => {
 };
 
 exports.logout = (req, res) => {
-  req.session = null;
   req.logout();
+  req.session.destroy();
 
   return res.sendStatus(204);
 };
@@ -49,7 +49,7 @@ exports.getUserById = async (req, res) => {
   const id = req.params.id;
 
   try {
-    const user = await authDAO.getUserById(id);
+    const user = await authDAO.getUserById(id, id > 2147483647);
     res.status(200).send({ user });
   } catch (err) {
     console.error(err);
@@ -84,7 +84,8 @@ exports.deleteUser = async (req, res) => {
 
 exports.googleCallback = async (req, res) => {
   const parsedUser = JSON.parse(JSON.stringify(req.user));
-  res
-    .status(200)
-    .send({ user: parsedUser[0], message: "Successfully logged in!" });
+  res.redirect(`http://localhost:8080/chat/?userId=${parsedUser[0].id}`);
+  // res
+  //   .status(200)
+  //   .send({ user: parsedUser[0], message: "Successfully logged in!" });
 };
