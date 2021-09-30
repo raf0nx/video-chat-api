@@ -2,9 +2,8 @@ const authDAO = require("../dao/authDAO");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const utils = require("../utils/utils");
+const redis = require("../redis/index");
 require("dotenv").config();
-
-let refreshTokens = [];
 
 exports.register = async (req, res) => {
   const userData = req.body;
@@ -39,7 +38,7 @@ exports.login = async (req, res) => {
     { name: user.name },
     process.env.REFRESH_TOKEN_SECRET
   );
-  refreshTokens.push(refreshToken);
+  await redis.setRefreshToken(email, refreshToken);
 
   try {
     if (await bcrypt.compare(password, user.password)) {
@@ -52,14 +51,16 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.createRefreshToken = (req, res) => {
+exports.createRefreshToken = async (req, res) => {
   const refreshToken = req.body.token;
 
   if (!refreshToken) {
     return res.sendStatus(401);
   }
 
-  if (!refreshTokens.includes(refreshToken)) {
+  const refreshTokens = await redis.getRefreshTokens();
+
+  if (!Object.values(refreshTokens).includes(refreshToken)) {
     return res.sendStatus(403);
   }
 
@@ -72,8 +73,8 @@ exports.createRefreshToken = (req, res) => {
   });
 };
 
-exports.logout = (req, res) => {
-  refreshTokens = refreshTokens.filter(token => token !== req.body.token);
+exports.logout = async (req, res) => {
+  await redis.deleteRefreshToken(req.body.email);
 
   res.sendStatus(204);
 };

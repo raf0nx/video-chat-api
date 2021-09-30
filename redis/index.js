@@ -1,5 +1,6 @@
 const redis = require("redis");
 const bluebird = require("bluebird");
+require("dotenv").config();
 
 const config = require("../config/index");
 
@@ -74,6 +75,33 @@ class Redis {
       return user;
     } catch (error) {
       console.error(error);
+    }
+  }
+
+  async setRefreshToken(email, refreshToken) {
+    try {
+      await this.client.hsetAsync(proccess.env.TOKEN_KEY, email, refreshToken);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async getRefreshTokens() {
+    try {
+      const refreshTokens = await this.client.hgetallAsync(
+        proccess.env.TOKEN_KEY
+      );
+      return refreshTokens;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async deleteRefreshToken(email) {
+    try {
+      await this.client.hdelAsync(proccess.env.TOKEN_KEY, email);
+    } catch (err) {
+      console.error(err);
     }
   }
 }
