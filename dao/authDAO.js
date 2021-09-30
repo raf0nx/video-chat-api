@@ -1,11 +1,13 @@
 const { User } = require("../models");
 const { OAuthUser } = require("../models");
+const bcrypt = require("bcrypt");
 
-exports.createUser = ({ name, email, password }) => {
+exports.createUser = async ({ name, email, password }) => {
+  const hashedPassword = await bcrypt.hash(password, 10);
   return User.create({
     name,
     email,
-    password,
+    password: hashedPassword,
   });
 };
 
@@ -26,11 +28,11 @@ exports.updateUser = ({ name, email, password }, id) => {
   return User.update(updatedUser, { where: { id } });
 };
 
-exports.deleteUser = (id) => {
+exports.deleteUser = id => {
   return User.destroy({ where: { id } });
 };
 
-exports.findOrCreate = (userData) => {
+exports.findOrCreate = userData => {
   return OAuthUser.findOrCreate({
     where: {
       id: userData.id,
@@ -38,4 +40,8 @@ exports.findOrCreate = (userData) => {
       email: userData.emails[0].value,
     },
   });
+};
+
+exports.findUserByEmail = email => {
+  return User.findOne({ where: { email: email } });
 };

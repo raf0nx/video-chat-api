@@ -1,39 +1,81 @@
 const authDAO = require("../dao/authDAO");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const utils = require("../utils/utils");
+require("dotenv").config();
 
-exports.createUser = async (req, res) => {
+let refreshTokens = [];
+
+exports.register = async (req, res) => {
   const userData = req.body;
 
   try {
     const newUser = await authDAO.createUser(userData);
-    return res
-      .status(201)
-      .send({ message: "User registered successfully!", newUser });
+    return res.status(201).send({
+      message: "User registered successfully!",
+      user: {
+        name: newUser.name,
+        email: newUser.email,
+      },
+    });
   } catch (err) {
     console.error(err);
   }
 };
 
-exports.login = (req, res) => {
-  const { room, username } = req.body;
+exports.login = async (req, res) => {
+  const { email, password } = req.body;
 
-  if (!room || !username) {
-    return res.status(422).send({
-      message:
-        "Unprocessable entity! At least one required param is not provided!",
-    });
+  const user = await authDAO.findUserByEmail(email);
+
+  if (!user) {
+    res
+      .status(400)
+      .send({ message: "User with this email address was not found" });
   }
 
-  return res.status(200).send({
-    room: room,
-    username: username,
+  const accessToken = utils.generateAccessToken({ name: user.name });
+  const refreshToken = jwt.sign(
+    { name: user.name },
+    process.env.REFRESH_TOKEN_SECRET
+  );
+  refreshTokens.push(refreshToken);
+
+  try {
+    if (await bcrypt.compare(password, user.password)) {
+      return res.json({ accessToken, refreshToken });
+    } else {
+      return res.status(401).send({ message: "Invalid password" });
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+exports.createRefreshToken = (req, res) => {
+  const refreshToken = req.body.token;
+
+  if (!refreshToken) {
+    return res.sendStatus(401);
+  }
+
+  if (!refreshTokens.includes(refreshToken)) {
+    return res.sendStatus(403);
+  }
+
+  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+    if (err) {
+      return res.sendStatus(403);
+    }
+    const accessToken = utils.generateAccessToken({ name: user.name });
+    res.json({ accessToken });
   });
 };
 
 exports.logout = (req, res) => {
-  req.logout();
-  req.session.destroy();
+  refreshTokens = refreshTokens.filter(token => token !== req.body.token);
 
-  return res.sendStatus(204);
+  res.sendStatus(204);
 };
 
 exports.getUsers = async (_, res) => {
