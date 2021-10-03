@@ -74,7 +74,14 @@ exports.createRefreshToken = async (req, res) => {
 };
 
 exports.logout = async (req, res) => {
-  await redis.deleteRefreshToken(req.body.email);
+  const token = req.body.token;
+  const allRefreshTokens = await redis.getRefreshTokens();
+
+  const email = Object.keys(allRefreshTokens).find(
+    key => allRefreshTokens[key] === token
+  );
+
+  await redis.deleteRefreshToken(email);
 
   res.sendStatus(204);
 };

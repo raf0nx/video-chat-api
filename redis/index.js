@@ -80,7 +80,7 @@ class Redis {
 
   async setRefreshToken(email, refreshToken) {
     try {
-      await this.client.hsetAsync(proccess.env.TOKEN_KEY, email, refreshToken);
+      await this.client.hsetAsync(process.env.TOKEN_KEY, email, refreshToken);
     } catch (err) {
       console.error(err);
     }
@@ -89,7 +89,7 @@ class Redis {
   async getRefreshTokens() {
     try {
       const refreshTokens = await this.client.hgetallAsync(
-        proccess.env.TOKEN_KEY
+        process.env.TOKEN_KEY
       );
       return refreshTokens;
     } catch (err) {
@@ -99,7 +99,7 @@ class Redis {
 
   async deleteRefreshToken(email) {
     try {
-      await this.client.hdelAsync(proccess.env.TOKEN_KEY, email);
+      await this.client.hdelAsync(process.env.TOKEN_KEY, email);
     } catch (err) {
       console.error(err);
     }
