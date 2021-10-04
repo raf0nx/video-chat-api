@@ -38,11 +38,11 @@ exports.login = async (req, res) => {
     { name: user.name },
     process.env.REFRESH_TOKEN_SECRET
   );
-  await redis.setRefreshToken(email, refreshToken);
 
   try {
     if (await bcrypt.compare(password, user.password)) {
-      return res.json({ accessToken, refreshToken });
+      await redis.setRefreshToken(email, refreshToken);
+      return res.json({ user, accessToken, refreshToken });
     } else {
       return res.status(401).send({ message: "Invalid password" });
     }
