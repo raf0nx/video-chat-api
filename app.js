@@ -6,12 +6,16 @@ const passport = require("passport");
 const cookieSession = require("cookie-session");
 const auth = require("./routes/auth");
 const rooms = require("./routes/room");
+const users = require("./routes/users");
 const chat = require("./chat_namespace");
 const config = require("./config/index");
 const http = require("http");
+const server = http.createServer(app);
+require("./config/passport.config");
+require("dotenv").config();
 const { createAdapter } = require("@socket.io/redis-adapter");
 const { createClient } = require("redis");
-const server = http.createServer(app);
+
 const io = (app.io = require("socket.io")(server, {
   cors: {
     origin: "http://localhost:8080",
@@ -21,11 +25,11 @@ const io = (app.io = require("socket.io")(server, {
   },
   allowEIO3: true,
 }));
-require("./config/passport.config");
 
 app.use(
   cors({
-    origin: "*",
+    origin: "http://localhost:8080",
+    credentials: true,
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
     preflightContinue: false,
     optionsSuccessStatus: 204,
@@ -36,8 +40,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cookieSession({
-    name: config.SESSION_NAME,
-    keys: ["key1", "key2"],
+    maxAge: 24 * 60 * 60 * 1000,
+    keys: [process.env.COOKIE_KEY],
   })
 );
 
@@ -46,6 +50,7 @@ app.use(passport.session());
 
 app.use("/auth", auth);
 app.use("/rooms", rooms);
+app.use("/users", users);
 
 app.use(express.static(path.join(__dirname, "../dist")));
 chat.createNameSpace(io);

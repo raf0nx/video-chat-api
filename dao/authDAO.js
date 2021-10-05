@@ -15,13 +15,8 @@ exports.getUsers = () => {
   return User.findAll();
 };
 
-exports.getUserById = (id, isOAuthUser = false) => {
-  if (isOAuthUser) {
-    return OAuthUser.findByPk(id);
-  }
-
-  return User.findByPk(id);
-};
+exports.getUserById = (id, isOAuthUser = false) =>
+  isOAuthUser ? OAuthUser.findByPk(id) : User.findByPk(+id);
 
 exports.updateUser = ({ name, email, password }, id) => {
   const updatedUser = { name, email, password };
@@ -32,16 +27,17 @@ exports.deleteUser = id => {
   return User.destroy({ where: { id } });
 };
 
-exports.findOrCreate = userData => {
+exports.findOrCreate = (profileId, userData) => {
   return OAuthUser.findOrCreate({
-    where: {
-      id: userData.id,
-      name: userData.name.givenName,
-      email: userData.emails[0].value,
-    },
+    where: { id: profileId },
+    defaults: userData,
   });
 };
 
 exports.findUserByEmail = email => {
   return User.findOne({ where: { email: email } });
+};
+
+exports.findOne = id => {
+  return OAuthUser.findOne({ where: { id } });
 };

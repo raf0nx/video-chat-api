@@ -9,15 +9,23 @@ module.exports = (sequelize, DataTypes) => {
       id: {
         type: DataTypes.STRING,
         primaryKey: true,
-        allowNull: false,
+        allowNull: true,
       },
       name: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       email: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
+      },
+      password: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      picture: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
     },
     {
