@@ -16,6 +16,15 @@ module.exports = {
       },
       password: {
         type: Sequelize.STRING,
+        allowNull: true,
+      },
+      picture: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      googleId: {
+        type: Sequelize.STRING,
+        allowNull: true,
       },
       createdAt: {
         allowNull: false,

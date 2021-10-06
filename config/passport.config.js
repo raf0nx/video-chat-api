@@ -16,7 +16,7 @@ passport.use(
         name: profile.name.givenName,
         email: profile.emails[0].value,
         picture: profile.photos[0].value,
-        id: profile.id,
+        googleId: profile.id,
       };
       let user = null;
 
@@ -34,15 +34,13 @@ passport.use(
   )
 );
 
-passport.serializeUser((user, done) => {
-  done(null, user.id);
-});
+passport.serializeUser((user, done) => done(null, user.id));
 
 passport.deserializeUser(async (id, done) => {
   let user = null;
 
   try {
-    user = await authDAO.findOne(id);
+    user = await authDAO.getUserById(id);
   } catch (err) {
     console.error(err);
     done(err, null);
