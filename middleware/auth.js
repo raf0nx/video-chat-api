@@ -1,23 +1,39 @@
 const jwt = require("jsonwebtoken");
+const utils = require("../utils/utils");
 require("dotenv").config();
 
 exports.authenticateToken = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-
-  if (!token) {
-    return authenticateUser(req, res, next);
+  if (req.user) {
+    next();
   }
 
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-    if (err) {
-      return res.sendStatus(403);
+  const { accessToken, refreshToken } = req.cookies;
+
+  if (!accessToken) {
+    return res.sendStatus(401);
+  }
+
+  jwt.verify(
+    accessToken,
+    process.env.ACCESS_TOKEN_SECRET,
+    async (err, user) => {
+      if (err) {
+        const newToken = refreshToken
+          ? await utils.refreshAccessToken(refreshToken)
+          : null;
+
+        if (!newToken) {
+          return res.sendStatus(403);
+        }
+
+        res.cookie("accessToken", accessToken, {
+          maxAge: 30 * 60 * 1000,
+          httpOnly: true,
+        });
+      }
+
+      req.user = user;
+      next();
     }
-
-    req.user = user;
-    next();
-  });
+  );
 };
-
-authenticateUser = (req, res, next) =>
-  req.user ? next() : res.sendStatus(401);

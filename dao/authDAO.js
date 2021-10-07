@@ -30,5 +30,4 @@ exports.findOrCreate = (profileId, userData) =>
 exports.findUserByEmail = email =>
   User.findOne({
     where: { email: email },
-    attributes: { exclude: ["password"] },
   });

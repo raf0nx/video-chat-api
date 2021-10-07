@@ -42,6 +42,18 @@ exports.login = async (req, res) => {
   try {
     if (await bcrypt.compare(password, user.password)) {
       await redis.setRefreshToken(email, refreshToken);
+      delete user.dataValues.password;
+
+      res.cookie("accessToken", accessToken, {
+        maxAge: 30 * 60 * 1000,
+        httpOnly: true,
+      });
+
+      res.cookie("refreshToken", refreshToken, {
+        maxAge: 30 * 60 * 1000,
+        httpOnly: true,
+      });
+
       return res.json({ user, accessToken, refreshToken });
     } else {
       return res.status(401).send({ message: "Invalid password" });
@@ -49,28 +61,6 @@ exports.login = async (req, res) => {
   } catch (err) {
     console.error(err);
   }
-};
-
-exports.createRefreshToken = async (req, res) => {
-  const refreshToken = req.body.token;
-
-  if (!refreshToken) {
-    return res.sendStatus(401);
-  }
-
-  const refreshTokens = await redis.getRefreshTokens();
-
-  if (!Object.values(refreshTokens).includes(refreshToken)) {
-    return res.sendStatus(403);
-  }
-
-  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-    if (err) {
-      return res.sendStatus(403);
-    }
-    const accessToken = utils.generateAccessToken({ name: user.name });
-    res.json({ accessToken });
-  });
 };
 
 exports.logout = async (req, res) => {
