@@ -5,22 +5,22 @@ let userRoom, userName;
 
 const joinRoom =
   (_socket, namespace) =>
-  async ({ socket }) => {
+  async ({ socket, user }) => {
     _socket.join(socket.room);
     userRoom = socket.room;
-    userName = socket.username;
+    userName = user.authUser.name;
 
     try {
       await Redis.addUser(userRoom, userName, {
         username: userName,
         status: socket.status,
-        privateChat: false,
+        privateChat: "",
       });
 
       const users = await Redis.getUsers(userRoom);
       namespace
         .in(socket.room)
-        .emit("newUser", { users, username: socket.username });
+        .emit("newUser", { users, username: user.authUser.name });
     } catch (error) {
       console.error(error);
     }
@@ -28,15 +28,17 @@ const joinRoom =
 
 const publicMessage =
   (namespace) =>
-  ({ socket, message }) => {
-    const { room, username } = socket;
+  ({ socket, user, message }) => {
+    const { room } = socket;
+		const username = user.authUser.name;
     namespace.in(room).emit("newMessage", { message, username });
   };
 
 const leaveRoom =
   (_socket, namespace) =>
-  async ({ socket }) => {
-    const { room, username } = socket;
+  async ({ socket, user }) => {
+    const { room } = socket;
+		const username = user.authUser.name;
     _socket.leave(room);
     try {
       await Redis.deleteUser(room, username);
@@ -68,8 +70,9 @@ const leaveChat =
 
 const joinPrivateRoom =
   (_socket, namespace) =>
-  async ({ socket, to, from, privateRoom, joinConfirmation }) => {
-    const { username, room } = socket;
+  async ({ socket, user, to, from, privateRoom, joinConfirmation }) => {
+    const { room } = socket;
+		const username = user.authUser.name;
 
     if (!room) return;
 
@@ -107,7 +110,7 @@ const leavePrivateRoom =
   async ({ room, from, to, privateRoom }) => {
     try {
       const user = await Redis.getUser(room, from);
-      await Redis.setUser(room, from, { ...user, privateChat: false });
+      await Redis.setUser(room, from, { ...user, privateChat: "" });
 
       socket.leave(privateRoom);
       namespace.to(privateRoom).emit("leavePrivateRoom", {
@@ -130,10 +133,11 @@ const privateMessage =
 
 const changeStatus =
   (namespace) =>
-  async ({ socket }) => {
-    try {
-      const { username, room, status } = socket;
+  async ({ socket, user }) => {
+		const { room, status } = socket;
+		const username = user.authUser.name;
 
+		try {
       const user = await Redis.getUser(room, username);
       await Redis.setUser(room, username, {
         ...user,

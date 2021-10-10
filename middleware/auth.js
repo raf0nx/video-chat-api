@@ -4,7 +4,7 @@ require("dotenv").config();
 
 exports.authenticateToken = (req, res, next) => {
   if (req.user) {
-    next();
+    return next();
   }
 
   const { accessToken, refreshToken } = req.cookies;

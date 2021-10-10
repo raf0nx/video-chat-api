@@ -1,19 +1,19 @@
 const express = require("express");
-const authController = require("../controllers/authController");
+const userController = require("../controllers/userController");
 const authMiddleware = require("../middleware/auth");
 const router = express.Router();
 
-router.get("/", authMiddleware.authenticateToken, authController.getUsers);
+router.get("/", authMiddleware.authenticateToken, userController.getUsers);
 router.get(
-  "/:id",
-  authMiddleware.authenticateToken,
-  authController.getUserById
+	"/:id",
+	authMiddleware.authenticateToken,
+	userController.getUserById
 );
-router.patch("/:id", authMiddleware.authenticateToken, authController.editUser);
+router.patch("/:id", authMiddleware.authenticateToken, userController.editUser);
 router.delete(
-  "/:id",
-  authMiddleware.authenticateToken,
-  authController.deleteUser
+	"/:id",
+	authMiddleware.authenticateToken,
+	userController.deleteUser
 );
 
 module.exports = router;
