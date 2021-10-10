@@ -3,7 +3,7 @@ const bcrypt = require("bcrypt");
 
 exports.createUser = async ({ name, email, password }) => {
   const hashedPassword = await bcrypt.hash(password, 10);
-  return User.create({
+  User.create({
     name,
     email,
     password: hashedPassword,
@@ -21,13 +21,13 @@ exports.deleteUser = id => User.destroy({ where: { id } });
 exports.getUserById = id =>
   User.findByPk(id, { attributes: { exclude: ["password"] } });
 
-exports.findOrCreate = (profileId, userData) =>
+exports.findOrCreate = (googleId, userData) =>
   User.findOrCreate({
-    where: { googleId: profileId },
+    where: { googleId },
     defaults: userData,
   });
 
 exports.findUserByEmail = email =>
   User.findOne({
-    where: { email: email },
+    where: { email },
   });
