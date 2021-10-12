@@ -13,7 +13,7 @@ const joinRoom =
     try {
       await Redis.addUser(userRoom, userName, {
         username: userName,
-        status: socket.status,
+        status: user.status,
         privateChat: "",
       });
 
@@ -27,10 +27,10 @@ const joinRoom =
   };
 
 const publicMessage =
-  (namespace) =>
+  namespace =>
   ({ socket, user, message }) => {
     const { room } = socket;
-		const username = user.authUser.name;
+    const username = user.authUser.name;
     namespace.in(room).emit("newMessage", { message, username });
   };
 
@@ -38,7 +38,7 @@ const leaveRoom =
   (_socket, namespace) =>
   async ({ socket, user }) => {
     const { room } = socket;
-		const username = user.authUser.name;
+    const username = user.authUser.name;
     _socket.leave(room);
     try {
       await Redis.deleteUser(room, username);
@@ -72,7 +72,7 @@ const joinPrivateRoom =
   (_socket, namespace) =>
   async ({ socket, user, to, from, privateRoom, joinConfirmation }) => {
     const { room } = socket;
-		const username = user.authUser.name;
+    const username = user.authUser.name;
 
     if (!room) return;
 
@@ -124,7 +124,7 @@ const leavePrivateRoom =
   };
 
 const privateMessage =
-  (namespace) =>
+  namespace =>
   ({ privateMessage, to, from, privateRoom }) => {
     namespace
       .to(privateRoom)
@@ -132,12 +132,13 @@ const privateMessage =
   };
 
 const changeStatus =
-  (namespace) =>
+  namespace =>
   async ({ socket, user }) => {
-		const { room, status } = socket;
-		const username = user.authUser.name;
+    const { room } = socket;
+    const { status } = user;
+    const username = user.authUser.name;
 
-		try {
+    try {
       const user = await Redis.getUser(room, username);
       await Redis.setUser(room, username, {
         ...user,
@@ -162,7 +163,7 @@ const disconnect = (socket, namespace) => async () => {
 };
 
 const privateMessagePCSignaling =
-  (namespace) =>
+  namespace =>
   ({ desc, to, privateRoom, from }) => {
     namespace
       .to(privateRoom)
