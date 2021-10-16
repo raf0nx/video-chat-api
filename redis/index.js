@@ -34,9 +34,7 @@ class Redis {
 
   async deleteUser(room, socketId) {
     try {
-      const response = await this.client.hdelAsync(room, socketId);
-
-      return response;
+      await this.client.hdelAsync(room, socketId);
     } catch (error) {
       console.error(error);
     }
@@ -104,6 +102,40 @@ class Redis {
       console.error(err);
     }
   }
+
+	async setSocket(socketId, payload) {
+		try {
+			await this.client.hsetAsync(config.SOCKETS_KEY, socketId, JSON.stringify(payload));
+		} catch (err) {
+			console.erorr(err);
+		}
+	}
+
+	async getSockets() {
+		try {
+			const sockets = await this.client.hgetallAsync(config.SOCKETS_KEY);
+			return sockets;
+		} catch (err) {
+			console.erorr(err);
+		}
+	}
+
+	async getSocket(socketId) {
+		try {
+			const socket = await this.client.hgetAsync(config.SOCKETS_KEY, socketId);
+			return socket;
+		} catch (err) {
+			console.error(err);
+		}
+	}
+
+	async deleteSocket(socketId) {
+		try {
+			await this.client.hdelAsync(config.SOCKETS_KEY, socketId);
+		} catch (err) {
+			console.error(err);
+		}
+	}
 }
 
 module.exports = new Redis();

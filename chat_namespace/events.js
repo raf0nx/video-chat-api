@@ -1,26 +1,23 @@
 const Redis = require("../redis/index");
-const config = require("../config/index");
-
-let userRoom, userName;
 
 const joinRoom =
   (_socket, namespace) =>
   async ({ socket, user }) => {
     _socket.join(socket.room);
-    userRoom = socket.room;
-    userName = user.authUser.name;
+    const { room } = socket;
+    const username = user.authUser.name;
 
     try {
-      await Redis.addUser(userRoom, userName, {
-        username: userName,
+      await Redis.addUser(room, username, {
+        username,
         status: user.status,
         privateChat: "",
       });
+			await Redis.setSocket(_socket.id, { username, room })
 
-      const users = await Redis.getUsers(userRoom);
-      namespace
-        .in(socket.room)
-        .emit("newUser", { users, username: user.authUser.name });
+      const users = await Redis.getUsers(room);
+
+      namespace.in(socket.room).emit("newUser", { users, username });
     } catch (error) {
       console.error(error);
     }
@@ -55,6 +52,7 @@ const leaveChat =
   async ({ room, username }) => {
     try {
       await Redis.deleteUser(room, username);
+			await Redis.deleteSocket(socket.id);
       const users = await Redis.getUsers(room);
 
       socket.leave(room);
@@ -154,12 +152,13 @@ const changeStatus =
   };
 
 const disconnect = (socket, namespace) => async () => {
-  try {
-    await Redis.deleteUser(userName, config.KEY);
-    leaveChat(socket, namespace)({ room: userRoom, username: userName });
-  } catch (error) {
-    console.error(error);
-  }
+	const data = JSON.parse(await Redis.getSocket(socket.id));
+
+	if (!data) {
+		return;
+	}
+
+  leaveChat(socket, namespace)({ room: data.room, username: data.username });
 };
 
 const privateMessagePCSignaling =
