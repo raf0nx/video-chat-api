@@ -9,7 +9,7 @@ const CONFIG = {
   CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   CALLBACK_URL: process.env.CALLBACK_URL,
   SESSION_NAME: process.env.SESSION_NAME,
-	SOCKETS_KEY: "SOCKETS"
+	SOCKETS_KEY: process.env.SOCKETS_KEY
 };
 
 module.exports = CONFIG;
