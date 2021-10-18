@@ -3,17 +3,18 @@ const Redis = require("../redis/index");
 const joinRoom =
   (_socket, namespace) =>
   async ({ socket, user }) => {
-    _socket.join(socket.room);
     const { room } = socket;
     const username = user.authUser.name;
 
+    _socket.join(room);
+
     try {
-      await Redis.addUser(room, username, {
+      await Redis.setUser(_socket.id, {
         username,
         status: user.status,
+        room,
         privateChat: "",
       });
-			await Redis.setSocket(_socket.id, { username, room })
 
       const users = await Redis.getUsers(room);
 
@@ -36,9 +37,11 @@ const leaveRoom =
   async ({ socket, user }) => {
     const { room } = socket;
     const username = user.authUser.name;
+
     _socket.leave(room);
+
     try {
-      await Redis.deleteUser(room, username);
+      await Redis.deleteUser(_socket.id);
       const users = await Redis.getUsers(room);
 
       namespace.in(room).emit("newUser", { users, username });
@@ -51,8 +54,7 @@ const leaveChat =
   (socket, namespace) =>
   async ({ room, username }) => {
     try {
-      await Redis.deleteUser(room, username);
-			await Redis.deleteSocket(socket.id);
+      await Redis.deleteUser(socket.id);
       const users = await Redis.getUsers(room);
 
       socket.leave(room);
@@ -77,7 +79,8 @@ const joinPrivateRoom =
     _socket.join(privateRoom);
 
     try {
-      const { privateChat } = await Redis.getUser(room, to);
+      const { privateChat } = await Redis.getUser(_socket.id);
+
       if (!!privateChat && privateChat !== username) {
         namespace.to(privateRoom).emit("leavePrivateRoom", {
           to,
@@ -89,8 +92,8 @@ const joinPrivateRoom =
         return;
       }
 
-      const user = await Redis.getUser(room, username);
-      await Redis.setUser(room, username, {
+      const user = await Redis.getUser(_socket.id);
+      await Redis.setUser(_socket.id, {
         ...user,
         privateChat: privateRoom,
       });
@@ -105,10 +108,10 @@ const joinPrivateRoom =
 
 const leavePrivateRoom =
   (socket, namespace) =>
-  async ({ room, from, to, privateRoom }) => {
+  async ({ from, to, privateRoom }) => {
     try {
-      const user = await Redis.getUser(room, from);
-      await Redis.setUser(room, from, { ...user, privateChat: "" });
+      const user = await Redis.getUser(socket.id);
+      await Redis.setUser(socket.id, { ...user, privateChat: "" });
 
       socket.leave(privateRoom);
       namespace.to(privateRoom).emit("leavePrivateRoom", {
@@ -130,15 +133,15 @@ const privateMessage =
   };
 
 const changeStatus =
-  namespace =>
+  (_socket, namespace) =>
   async ({ socket, user }) => {
     const { room } = socket;
     const { status } = user;
     const username = user.authUser.name;
 
     try {
-      const user = await Redis.getUser(room, username);
-      await Redis.setUser(room, username, {
+      const user = await Redis.getUser(_socket.id);
+      await Redis.setUser(_socket.id, {
         ...user,
         status,
       });
@@ -152,13 +155,13 @@ const changeStatus =
   };
 
 const disconnect = (socket, namespace) => async () => {
-	const data = JSON.parse(await Redis.getSocket(socket.id));
+  const user = await Redis.getUser(socket.id);
 
-	if (!data) {
-		return;
-	}
+  if (!user) {
+    return;
+  }
 
-  leaveChat(socket, namespace)({ room: data.room, username: data.username });
+  leaveChat(socket, namespace)({ room: user.room, username: user.username });
 };
 
 const privateMessagePCSignaling =

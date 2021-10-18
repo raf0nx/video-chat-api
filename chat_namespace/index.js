@@ -11,7 +11,7 @@ const onConnection = (socket) => {
   socket.on("joinPrivateRoom", events.joinPrivateRoom(socket, namespace));
   socket.on("leavePrivateRoom", events.leavePrivateRoom(socket, namespace));
   socket.on("privateMessage", events.privateMessage(namespace));
-  socket.on("changeStatus", events.changeStatus(namespace));
+  socket.on("changeStatus", events.changeStatus(socket, namespace));
   socket.on("disconnect", events.disconnect(socket, namespace));
   socket.on(
     "privateMessagePCSignaling",
