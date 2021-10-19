@@ -1,8 +1,10 @@
-const authDAO = require("../dao/authDAO");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+
+const authDAO = require("../dao/authDAO");
 const utils = require("../utils/utils");
 const redis = require("../redis/index");
+const EnumTokens = require("../enums/enumTokens");
 require("dotenv").config();
 
 exports.register = async (req, res) => {
@@ -40,12 +42,12 @@ exports.login = async (req, res) => {
       await redis.setRefreshToken(email, refreshToken);
       delete user.dataValues.password;
 
-      res.cookie("accessToken", accessToken, {
+      res.cookie(EnumTokens.ACCESS_TOKEN, accessToken, {
         maxAge: 30 * 60 * 1000,
         httpOnly: true,
       });
 
-      res.cookie("refreshToken", refreshToken, {
+      res.cookie(EnumTokens.REFRESH_TOKEN, refreshToken, {
         maxAge: 30 * 60 * 1000,
         httpOnly: true,
       });
@@ -71,8 +73,8 @@ exports.logout = async (req, res) => {
 
     await redis.deleteRefreshToken(email);
 
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
+    res.clearCookie(EnumTokens.ACCESS_TOKEN);
+    res.clearCookie(EnumTokens.REFRESH_TOKEN);
   }
 
   if (req.user) {

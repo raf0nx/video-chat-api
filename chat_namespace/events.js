@@ -1,5 +1,7 @@
 const Redis = require("../redis/index");
 
+const EnumEvents = require("../enums/enumEvents");
+
 const joinRoom =
   (_socket, namespace) =>
   async ({ socket, user }) => {
@@ -18,7 +20,7 @@ const joinRoom =
 
       const users = await Redis.getUsers(room);
 
-      namespace.in(socket.room).emit("newUser", { users, username });
+      namespace.in(socket.room).emit(EnumEvents.NEW_USER, { users, username });
     } catch (error) {
       console.error(error);
     }
@@ -29,7 +31,7 @@ const publicMessage =
   ({ socket, user, message }) => {
     const { room } = socket;
     const username = user.authUser.name;
-    namespace.in(room).emit("newMessage", { message, username });
+    namespace.in(room).emit(EnumEvents.NEW_MESSAGE, { message, username });
   };
 
 const leaveRoom =
@@ -44,7 +46,7 @@ const leaveRoom =
       await Redis.deleteUser(_socket.id);
       const users = await Redis.getUsers(room);
 
-      namespace.in(room).emit("newUser", { users, username });
+      namespace.in(room).emit(EnumEvents.NEW_USER, { users, username });
     } catch (error) {
       console.error(error);
     }
@@ -59,7 +61,7 @@ const leaveChat =
 
       socket.leave(room);
 
-      namespace.in(room).emit("leaveChat", {
+      namespace.in(room).emit(EnumEvents.LEAVE_CHAT, {
         users,
         message: `${username} left the room`,
       });
@@ -82,7 +84,7 @@ const joinPrivateRoom =
       const { privateChat } = await Redis.getUser(_socket.id);
 
       if (!!privateChat && privateChat !== username) {
-        namespace.to(privateRoom).emit("leavePrivateRoom", {
+        namespace.to(privateRoom).emit(EnumEvents.LEAVE_PRIVATE_ROOM, {
           to,
           privateMessage: `${to} is already talking`,
           from: username,
@@ -99,7 +101,7 @@ const joinPrivateRoom =
       });
 
       if (!joinConfirmation) {
-        namespace.in(room).emit("privateChat", { to, from });
+        namespace.in(room).emit(EnumEvents.PRIVATE_CHAT, { to, from });
       }
     } catch (error) {
       console.error(error);
@@ -114,7 +116,7 @@ const leavePrivateRoom =
       await Redis.setUser(socket.id, { ...user, privateChat: "" });
 
       socket.leave(privateRoom);
-      namespace.to(privateRoom).emit("leavePrivateRoom", {
+      namespace.to(privateRoom).emit(EnumEvents.LEAVE_PRIVATE_ROOM, {
         to,
         from,
         privateMessage: `${from} has closed the chat`,
@@ -129,7 +131,7 @@ const privateMessage =
   ({ privateMessage, to, from, privateRoom }) => {
     namespace
       .to(privateRoom)
-      .emit("privateMessage", { to, privateMessage, from });
+      .emit(EnumEvents.PRIVATE_MESSAGE, { to, privateMessage, from });
   };
 
 const changeStatus =
@@ -148,7 +150,7 @@ const changeStatus =
 
       const users = await Redis.getUsers(room);
 
-      namespace.in(room).emit("newUser", { users, username });
+      namespace.in(room).emit(EnumEvents.NEW_USER, { users, username });
     } catch (error) {
       console.error(error);
     }
@@ -169,7 +171,7 @@ const privateMessagePCSignaling =
   ({ desc, to, privateRoom, from }) => {
     namespace
       .to(privateRoom)
-      .emit("privateMessagePCSignaling", { desc, to, from });
+      .emit(EnumEvents.PRIVATE_MESSAGE_PC_SIGNALING, { desc, to, from });
   };
 
 module.exports = {

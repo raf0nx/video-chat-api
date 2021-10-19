@@ -11,7 +11,7 @@ passport.use(
       callbackURL: config.CALLBACK_URL,
       passReqToCallback: true,
     },
-    async (req, accessToken, refreshToken, profile, done) => {
+    async (_, _2, _3, profile, done) => {
       const defaultUser = {
         name: profile.name.givenName,
         email: profile.emails[0].value,

@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken");
+
 const utils = require("../utils/utils");
+const EnumTokens = require("../enums/enumTokens");
 require("dotenv").config();
 
 exports.authenticateToken = (req, res, next) => {
@@ -26,7 +28,7 @@ exports.authenticateToken = (req, res, next) => {
           return res.sendStatus(403);
         }
 
-        res.cookie("accessToken", accessToken, {
+        res.cookie(EnumTokens.ACCESS_TOKEN, accessToken, {
           maxAge: 30 * 60 * 1000,
           httpOnly: true,
         });

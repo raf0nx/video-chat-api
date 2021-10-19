@@ -6,7 +6,6 @@ const passport = require("passport");
 const cookieParser = require("cookie-parser");
 const cookieSession = require("cookie-session");
 const auth = require("./routes/auth");
-const rooms = require("./routes/room");
 const users = require("./routes/users");
 const chat = require("./chat_namespace");
 const config = require("./config/index");
@@ -20,7 +19,7 @@ const { createClient } = require("redis");
 const io = (app.io = require("socket.io")(server, {
   cors: {
     origin: "http://localhost:8080",
-    methods: ["GET", "POST"],
+    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
     credentials: true,
     transports: ["websocket", "polling"],
   },
@@ -51,7 +50,6 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use("/auth", auth);
-app.use("/rooms", rooms);
 app.use("/users", users);
 
 app.use(express.static(path.join(__dirname, "../dist")));
