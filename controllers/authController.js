@@ -8,7 +8,7 @@ const EnumTokens = require("../enums/enumTokens");
 require("dotenv").config();
 
 exports.register = async (req, res) => {
-  const registerData = req.body;
+  const { registerData } = req.body;
 
   try {
     await authDAO.createUser(registerData);
