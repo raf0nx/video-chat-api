@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { validationResult } = require("express-validator");
 
 const authDAO = require("../dao/authDAO");
 const utils = require("../utils/utils");
@@ -8,10 +9,16 @@ const EnumTokens = require("../enums/enumTokens");
 require("dotenv").config();
 
 exports.register = async (req, res) => {
-  const { registerData } = req.body;
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.mapped() });
+  }
+
+  const { email, name, password } = req.body;
 
   try {
-    await authDAO.createUser(registerData);
+    await authDAO.createUser({ email, name, password });
     return res.status(201).send({
       message: "User registered successfully!",
     });
@@ -21,44 +28,34 @@ exports.register = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  const errors = validationResult(req);
 
-  const user = await authDAO.findUserByEmail(email);
-
-  if (!user) {
-    res.status(400).send({
-      message: "User with this email address was not found",
-    });
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.mapped() });
   }
 
+  const { email } = req.body;
+  const user = await authDAO.findUserByEmail(email);
   const accessToken = utils.generateAccessToken({ name: user.name });
   const refreshToken = jwt.sign(
     { name: user.name },
     process.env.REFRESH_TOKEN_SECRET
   );
 
-  try {
-    if (await bcrypt.compare(password, user.password)) {
-      await redis.setRefreshToken(email, refreshToken);
-      delete user.dataValues.password;
+  await redis.setRefreshToken(email, refreshToken);
+  delete user.dataValues.password;
 
-      res.cookie(EnumTokens.ACCESS_TOKEN, accessToken, {
-        maxAge: 30 * 60 * 1000,
-        httpOnly: true,
-      });
+  res.cookie(EnumTokens.ACCESS_TOKEN, accessToken, {
+    maxAge: 30 * 60 * 1000,
+    httpOnly: true,
+  });
 
-      res.cookie(EnumTokens.REFRESH_TOKEN, refreshToken, {
-        maxAge: 30 * 60 * 1000,
-        httpOnly: true,
-      });
+  res.cookie(EnumTokens.REFRESH_TOKEN, refreshToken, {
+    maxAge: 30 * 60 * 1000,
+    httpOnly: true,
+  });
 
-      return res.json(user);
-    } else {
-      return res.status(401).send({ message: "Invalid password" });
-    }
-  } catch (err) {
-    console.error(err);
-  }
+  return res.json(user);
 };
 
 exports.logout = async (req, res) => {
