@@ -1,6 +1,4 @@
-const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { validationResult } = require("express-validator");
 
 const authDAO = require("../dao/authDAO");
 const utils = require("../utils/utils");
@@ -9,12 +7,6 @@ const EnumTokens = require("../enums/enumTokens");
 require("dotenv").config();
 
 exports.register = async (req, res) => {
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    return res.status(422).json({ errors: errors.mapped() });
-  }
-
   const { email, name, password } = req.body;
 
   try {
@@ -28,12 +20,6 @@ exports.register = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    return res.status(422).json({ errors: errors.mapped() });
-  }
-
   const { email } = req.body;
   const user = await authDAO.findUserByEmail(email);
   const accessToken = utils.generateAccessToken({ name: user.name });
