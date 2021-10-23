@@ -5,7 +5,7 @@ const authDAO = require("../../dao/authDAO");
 exports.validateRegistration = () => [
   check("name")
     .isAlphanumeric()
-    .withMessage("Sholud contain only letters and numbers")
+    .withMessage("Sholud contain only letters, numbers and spaces")
     .bail()
     .isLength({ min: 3, max: 255 })
     .withMessage("Should be between 3 and 255 characters"),
