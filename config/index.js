@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const CONFIG = {
+	ORIGIN: process.env.ORIGIN || "http://localhost:8080",
   PORT: process.env.PORT || 3000,
   CHAT_NAMESPACE: process.env.CHAT_NAMESPACE,
   REDIS_HOST: process.env.REDIS_HOST || "localhost",
