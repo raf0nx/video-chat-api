@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken");
 const redis = require("../redis/index");
+const path = require("path");
+const rfs = require("rotating-file-stream");
 require("dotenv").config();
 
 exports.generateAccessToken = user => {
@@ -22,3 +24,8 @@ exports.refreshAccessToken = async refreshToken => {
       err ? null : exports.generateAccessToken({ name: user.name })
   );
 };
+
+exports.accessLogStream = rfs.createStream("access.log", {
+  interval: "1d",
+  path: path.resolve("./", "logs"),
+});
