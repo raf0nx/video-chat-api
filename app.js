@@ -4,6 +4,8 @@ const cors = require("cors");
 const path = require("path");
 const passport = require("passport");
 const morgan = require("morgan");
+const csrf = require("csurf");
+const csrfProtection = csrf({ cookie: true });
 const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
 const cookieSession = require("cookie-session");
@@ -45,6 +47,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(helmet());
+app.use(csrfProtection);
 
 app.use(
   cookieSession({

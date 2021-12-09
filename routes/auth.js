@@ -26,6 +26,10 @@ router.get("/user", authMiddleware.authenticateToken, (req, res) =>
   res.json(req.user)
 );
 
+router.get("/csrf-token", (req, res) =>
+  res.json({ csrfToken: req.csrfToken() })
+);
+
 /**
  * GOOGLE AUTHENTICATION OAUTH 2.0
  */
